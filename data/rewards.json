@@ -1,0 +1,31 @@
+{
+  "__doc": [
+    "Fees collected, rewards distributed and the holder count, published by",
+    "scripts/index-rewards.mjs on a schedule so that no visitor has to compute",
+    "them. Reading a few hundred thousand blocks of Base in the browser takes",
+    "dozens of RPC calls and about a minute of an uninterrupted tab: a desktop",
+    "waits it out, a phone gets backgrounded and shows em dashes. These figures",
+    "are served immediately instead, and app.js's own chain scan refines them",
+    "afterwards.",
+    "",
+    "Written only when meta.synced is true. A scan short of the head publishes",
+    "nulls, which render as em dashes — the honest answer when the total is not",
+    "yet known, and better than a number that would understate it.",
+    "",
+    "Nulls here are the launch state, not a fault: the indexer has not run yet."
+  ],
+  "totalDistributed": null,
+  "totalDistributedUsd": null,
+  "totalFeesCollected": null,
+  "totalFeesTokens": null,
+  "holders": null,
+  "marketCap": null,
+  "liquidity": null,
+  "volume24h": null,
+  "updatedAt": null,
+  "meta": {
+    "synced": false,
+    "blocksBehind": null,
+    "kexPriceUsd": null
+  }
+}

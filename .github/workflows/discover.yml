@@ -1,0 +1,35 @@
+name: Discover token facts
+
+# What config.js needs but a sandbox cannot look up: the pool, the reward
+# token and its decimals, the launch block, and whatever the platform routed
+# this token's fees to. Runs on a GitHub runner because that is the only
+# machine in this loop with a route to Base, DexScreener and the platform API.
+#
+# Push to either path below to run it — the token this session holds gets 403
+# from workflow_dispatch, so a push to a watched path is the trigger.
+
+on:
+  push:
+    paths:
+      - scripts/discover-token.mjs
+      - .github/workflows/discover.yml
+  workflow_dispatch:
+    inputs:
+      token:
+        description: Token contract address (blank = config.js contractAddress)
+        required: false
+        default: ''
+
+jobs:
+  discover:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Ask the network
+        env:
+          TOKEN: ${{ inputs.token }}
+          RPC_URL: ${{ secrets.RPC_URL }}
+        run: node scripts/discover-token.mjs
