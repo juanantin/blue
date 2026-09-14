@@ -49,8 +49,15 @@ const ENDPOINTS = [RPC_URL, ...(CFG.sources?.holders?.onchain?.rpcUrls || [])]
   .filter((u, i, a) => u && a.indexOf(u) === i);
 
 /* Capability, not weather: this node will never answer, so the next one is
-   tried at once. */
-const CANNOT = /not supported|unsupported|method not found|pruned|not available|header not found|missing trie node|HTTP (40[1-5])|unauthorized|forbidden/i;
+   tried at once.
+
+   The last two patterns are a node ADVERTISING a hard cap — "You can make
+   eth_getLogs requests with up to a 10 block range". Narrowing is the wrong
+   answer to that: this scan covers 342,000 blocks, which at ten a request is
+   thirty-four thousand requests, and the halving would give up long before
+   reaching a window that small anyway. Another endpoint is the answer, and
+   there are six more in the list. */
+const CANNOT = /not supported|unsupported|method not found|pruned|not available|header not found|missing trie node|HTTP (40[1-5])|unauthorized|forbidden|up to a \d+ block range|block range should work/i;
 
 const TRANSIENT = /HTTP (408|429|5\d\d)|fetch failed|ECONN|ETIMEDOUT|socket|healthy|timeout/i;
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));

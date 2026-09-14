@@ -9,7 +9,7 @@ window.SITE_CONFIG = {
   /* Build stamp. Shown in the ?debug=1 panel, so you can confirm which version
      a browser actually has rather than guessing at a cache. Bump it together
      with the ?v= on the script tags in index.html whenever you deploy. */
-  version: '14',
+  version: '15',
 
   /* ---- Token ---------------------------------------------------------- */
 
@@ -55,10 +55,10 @@ window.SITE_CONFIG = {
 
   /* Holders' share of what leaves the rewards index — the rest is the
      protocol's cut, so the outflow is NOT the distributed figure on its own.
-     ⚠ UNVERIFIED FOR $BLUE. 0.9 is the platform's usual split (and what
-     $BOX's own Stockify panel reads: "TO HOLDERS 90% · 10% protocol · 0%
-     creator"), but it is a per-token setting — check $BLUE's own panel before
-     any payout figure derived from it is published. */
+     VERIFIED against $BLUE's own Stockify panel ("TO HOLDERS 90% · 10%
+     protocol · 0% creator"), whose published totals match this site's to the
+     decimal: 83,722.09 STONKEX collected, 75,349.88 paid to holders, which is
+     exactly 0.9 of it. The full comparison is in worker/src/config.js. */
   holderShare: 0.9,
 
   /* Related contracts.

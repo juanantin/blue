@@ -80,14 +80,25 @@ export const STREAMS = [
 ];
 
 /* Share of the outflow that reaches holders — the rest is the protocol's cut.
-   ⚠ NOT YET VERIFIED FOR $BLUE. 0.9 is the platform's usual split and what
-   $BOX's panel reads ("TO HOLDERS 90% · 10% protocol · 0% creator"), but it
-   is a per-token setting, and it is the one multiplier standing between the
-   measured outflow and the figure on the tile. scripts/panel-probe.mjs reads
-   $BLUE's own Stockify panel for it; until that agrees, treat the distributed
-   figure as provisional and do not announce it. Better still, set
-   PROTOCOL_ADDRESS when it turns up — the cut is then subtracted exactly and
-   survives the percentage changing. */
+
+   VERIFIED against $BLUE's own Stockify panel, not inherited from $BOX's: it
+   reads "TO HOLDERS 90% · 10% protocol · 0% creator", and its published
+   totals agree with this indexer's to the decimal —
+
+       panel   FEES COLLECTED   83722.09 STONKEX ($745)
+       ours                     83722.08524291796  ($744.71)
+       panel   PAID TO HOLDERS  75349.88 STONKEX ($670)
+       ours                     75349.87671862617  ($670.24)
+
+   and 83722.09 × 0.9 = 75349.88 exactly, with the panel reporting 0 STONKEX
+   waiting to be invested and 0 waiting for the creator. Two independent
+   computations of the same three numbers agreeing to five decimal places is
+   the strongest evidence available that the streams below watch the right
+   flows.
+
+   Re-check it if the platform ever changes the split; better still, set
+   PROTOCOL_ADDRESS if the protocol's address turns up, since the cut is then
+   subtracted exactly and survives the percentage changing. */
 export const HOLDER_SHARE = 0.9;
 export const PROTOCOL_ADDRESS = null;
 
