@@ -18,10 +18,10 @@
      own, regardless of these tags. Every icon is generated from
      images/favicon.png — the Apple one has to be flattened onto white, because
      iOS renders a transparent home-screen icon as black. -->
-<link rel="icon" href="favicon.ico?v=9" sizes="any">
-<link rel="icon" type="image/png" href="images/favicon.png?v=9">
-<link rel="apple-touch-icon" href="images/apple-touch-icon.png?v=9">
-<link rel="manifest" href="site.webmanifest?v=9">
+<link rel="icon" href="favicon.ico?v=10" sizes="any">
+<link rel="icon" type="image/png" href="images/favicon.png?v=10">
+<link rel="apple-touch-icon" href="images/apple-touch-icon.png?v=10">
+<link rel="manifest" href="site.webmanifest?v=10">
 
 <!-- One face, four weights: the design separates label from figure by weight
      and colour, so the family has to carry 400 through 700.
@@ -39,38 +39,70 @@
       media="print" onload="this.media='all'">
 <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"></noscript>
 
-<link rel="stylesheet" href="assets/css/styles.css?v=9">
+<link rel="stylesheet" href="assets/css/styles.css?v=10">
 </head>
 <body>
 
 <!-- The banner's cubes, let loose behind the whole page. Purely decorative:
-     hidden from assistive tech, transparent to pointers, and every cube's
-     lane, size, speed, drift, spin and (negative) start offset lives in these
-     custom properties so the stylesheet needs no sixteen-way nth-child. -->
+     hidden from assistive tech and transparent to pointers.
+
+     Each cube's lane, depth, size, speed, drift, spin and (negative) start
+     offset lives in these custom properties, so the stylesheet needs no
+     24-way nth-child. --y places it down the DOCUMENT, not the viewport:
+     the layer scrolls with the page, and --depth is how far each one lags
+     behind it. -->
 <div class="cubes" aria-hidden="true">
-  <i style="--x:1.9vw;--s:24px;--d:29.6s;--delay:-17.9s;--drift:-8.3vw;--spin:360deg;--o:0.51"></i>
-  <i class="is-green" style="--x:4.6vw;--s:16px;--d:19.2s;--delay:-8.5s;--drift:-5.5vw;--spin:360deg;--o:0.41"></i>
-  <i style="--x:10.8vw;--s:32px;--d:28.4s;--delay:-23.7s;--drift:-6.0vw;--spin:270deg;--o:0.45"></i>
-  <i style="--x:16.3vw;--s:36px;--d:33.6s;--delay:-18.9s;--drift:-6.1vw;--spin:-360deg;--o:0.52"></i>
-  <i class="is-green" style="--x:19.1vw;--s:40px;--d:21.6s;--delay:-8.9s;--drift:5.7vw;--spin:-270deg;--o:0.43"></i>
-  <i style="--x:23.8vw;--s:24px;--d:29.3s;--delay:-18.9s;--drift:-2.1vw;--spin:-270deg;--o:0.67"></i>
-  <i style="--x:30.3vw;--s:36px;--d:36.7s;--delay:-13.5s;--drift:-7.2vw;--spin:270deg;--o:0.61"></i>
-  <i class="is-green" style="--x:34.5vw;--s:32px;--d:25.4s;--delay:-10.5s;--drift:3.1vw;--spin:-180deg;--o:0.48"></i>
-  <i style="--x:38.5vw;--s:20px;--d:23.7s;--delay:-20.7s;--drift:4.0vw;--spin:-360deg;--o:0.63"></i>
-  <i style="--x:44.2vw;--s:20px;--d:31.1s;--delay:-0.5s;--drift:5.1vw;--spin:-180deg;--o:0.69"></i>
-  <i class="is-green" style="--x:48.5vw;--s:20px;--d:26.2s;--delay:-7.6s;--drift:-9.8vw;--spin:180deg;--o:0.63"></i>
-  <i style="--x:52.6vw;--s:24px;--d:19.5s;--delay:-18.3s;--drift:0.4vw;--spin:180deg;--o:0.7"></i>
-  <i style="--x:56.3vw;--s:16px;--d:20.2s;--delay:-14.5s;--drift:-2.6vw;--spin:180deg;--o:0.39"></i>
-  <i class="is-green" style="--x:59.7vw;--s:28px;--d:17.5s;--delay:-3.4s;--drift:4.8vw;--spin:180deg;--o:0.6"></i>
-  <i style="--x:64.9vw;--s:20px;--d:21.2s;--delay:-13.4s;--drift:7.5vw;--spin:270deg;--o:0.7"></i>
-  <i style="--x:69.0vw;--s:40px;--d:33.0s;--delay:-20.5s;--drift:5.9vw;--spin:-270deg;--o:0.47"></i>
-  <i class="is-green" style="--x:73.5vw;--s:28px;--d:33.5s;--delay:-1.9s;--drift:-3.6vw;--spin:360deg;--o:0.58"></i>
-  <i style="--x:77.8vw;--s:28px;--d:31.1s;--delay:-13.5s;--drift:-2.4vw;--spin:-180deg;--o:0.65"></i>
-  <i style="--x:81.9vw;--s:24px;--d:25.2s;--delay:-3.8s;--drift:-3.1vw;--spin:-180deg;--o:0.52"></i>
-  <i class="is-green" style="--x:88.1vw;--s:16px;--d:23.8s;--delay:-22.4s;--drift:8.2vw;--spin:-180deg;--o:0.66"></i>
-  <i style="--x:92.9vw;--s:40px;--d:36.3s;--delay:-6.3s;--drift:3.0vw;--spin:-360deg;--o:0.5"></i>
-  <i style="--x:96.1vw;--s:36px;--d:26.6s;--delay:-16.8s;--drift:8.4vw;--spin:-360deg;--o:0.54"></i>
+  <i style="--x:1.1vw;--y:-4.3%;--s:20px;--depth:0.19;--d:32.2s;--delay:-12.4s;--drift:32px;--spin:360deg;--o:0.52"></i>
+  <i class="is-green" style="--x:5.3vw;--y:2.3%;--s:32px;--depth:0.1;--d:16.2s;--delay:-4.0s;--drift:40px;--spin:180deg;--o:0.48"></i>
+  <i style="--x:8.8vw;--y:3.6%;--s:36px;--depth:0.08;--d:21.7s;--delay:-5.6s;--drift:15px;--spin:-270deg;--o:0.36"></i>
+  <i style="--x:14.9vw;--y:7.2%;--s:40px;--depth:0.06;--d:21.1s;--delay:-15.5s;--drift:-34px;--spin:360deg;--o:0.57"></i>
+  <i class="is-green" style="--x:17.0vw;--y:14.5%;--s:16px;--depth:0.22;--d:17.8s;--delay:-2.6s;--drift:32px;--spin:270deg;--o:0.36"></i>
+  <i style="--x:21.8vw;--y:18.4%;--s:32px;--depth:0.1;--d:26.4s;--delay:-11.5s;--drift:24px;--spin:180deg;--o:0.44"></i>
+  <i style="--x:25.4vw;--y:22.8%;--s:28px;--depth:0.13;--d:16.4s;--delay:-10.8s;--drift:29px;--spin:270deg;--o:0.35"></i>
+  <i class="is-green" style="--x:29.6vw;--y:26.0%;--s:36px;--depth:0.08;--d:23.2s;--delay:-12.3s;--drift:-18px;--spin:180deg;--o:0.62"></i>
+  <i style="--x:35.3vw;--y:29.4%;--s:20px;--depth:0.19;--d:30.5s;--delay:-21.8s;--drift:18px;--spin:-360deg;--o:0.62"></i>
+  <i style="--x:39.8vw;--y:32.5%;--s:36px;--depth:0.08;--d:28.7s;--delay:-25.7s;--drift:-7px;--spin:-360deg;--o:0.58"></i>
+  <i class="is-green" style="--x:43.5vw;--y:38.3%;--s:40px;--depth:0.06;--d:17.8s;--delay:-16.8s;--drift:-22px;--spin:360deg;--o:0.57"></i>
+  <i style="--x:47.9vw;--y:42.4%;--s:28px;--depth:0.13;--d:17.5s;--delay:-11.7s;--drift:3px;--spin:-360deg;--o:0.42"></i>
+  <i style="--x:51.1vw;--y:48.0%;--s:40px;--depth:0.06;--d:32.6s;--delay:-12.4s;--drift:31px;--spin:-180deg;--o:0.57"></i>
+  <i class="is-green" style="--x:54.8vw;--y:49.5%;--s:16px;--depth:0.22;--d:20.1s;--delay:-9.4s;--drift:-21px;--spin:270deg;--o:0.52"></i>
+  <i style="--x:60.2vw;--y:55.3%;--s:16px;--depth:0.22;--d:20.1s;--delay:-13.6s;--drift:-31px;--spin:-180deg;--o:0.53"></i>
+  <i style="--x:64.6vw;--y:59.8%;--s:28px;--depth:0.13;--d:23.1s;--delay:-8.2s;--drift:-18px;--spin:360deg;--o:0.35"></i>
+  <i class="is-green" style="--x:68.4vw;--y:65.9%;--s:36px;--depth:0.08;--d:18.8s;--delay:-9.7s;--drift:34px;--spin:-180deg;--o:0.57"></i>
+  <i style="--x:73.2vw;--y:65.7%;--s:32px;--depth:0.1;--d:28.0s;--delay:-19.4s;--drift:-23px;--spin:-180deg;--o:0.64"></i>
+  <i style="--x:77.7vw;--y:71.0%;--s:20px;--depth:0.19;--d:20.7s;--delay:-7.9s;--drift:-22px;--spin:180deg;--o:0.62"></i>
+  <i class="is-green" style="--x:80.0vw;--y:76.6%;--s:24px;--depth:0.16;--d:23.3s;--delay:-11.5s;--drift:28px;--spin:180deg;--o:0.5"></i>
+  <i style="--x:85.1vw;--y:79.0%;--s:20px;--depth:0.19;--d:32.3s;--delay:-9.4s;--drift:-20px;--spin:-180deg;--o:0.64"></i>
+  <i style="--x:90.0vw;--y:82.3%;--s:40px;--depth:0.06;--d:34.0s;--delay:-27.8s;--drift:3px;--spin:-360deg;--o:0.4"></i>
+  <i class="is-green" style="--x:94.1vw;--y:87.8%;--s:24px;--depth:0.16;--d:26.4s;--delay:-11.3s;--drift:-39px;--spin:270deg;--o:0.62"></i>
+  <i style="--x:97.4vw;--y:91.1%;--s:36px;--depth:0.08;--d:26.6s;--delay:-10.0s;--drift:-21px;--spin:360deg;--o:0.54"></i>
 </div>
+
+<script>
+  (function () {
+    var layer = document.querySelector('.cubes');
+    if (!layer || !window.matchMedia) return;
+    // Same bargain as the trailer: decoration is the first thing to go.
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+    /* One custom property for the whole layer, read by every cube's own
+       --depth. Written inside requestAnimationFrame so a fast scroll sets it
+       once per frame instead of once per event, and the property only ever
+       feeds a transform, so nothing here can force layout. */
+    var pending = false;
+    function update() {
+      pending = false;
+      layer.style.setProperty('--scroll', window.pageYOffset + 'px');
+    }
+    addEventListener('scroll', function () {
+      if (pending) return;
+      pending = true;
+      requestAnimationFrame(update);
+    }, { passive: true });
+    addEventListener('resize', update, { passive: true });
+    update();
+  })();
+</script>
 
 <!-- ===================== HERO ===================== -->
 <header class="hero">
@@ -418,7 +450,7 @@
 <!-- ?v= is the cache buster: run `node scripts/stamp.mjs` on every deploy,
      which moves every ?v= here and `version` in config.js together. Skip it
      and a CDN keeps serving the previous config.js and app.js. -->
-<script src="config.js?v=9"></script>
-<script src="assets/js/app.js?v=9"></script>
+<script src="config.js?v=10"></script>
+<script src="assets/js/app.js?v=10"></script>
 </body>
 </html>
