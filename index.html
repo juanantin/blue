@@ -6,22 +6,50 @@
 <title>The Stonkex Bull — hold $BLUE, earn $STONKEX</title>
 <meta name="description" content="The Stonkex Bull, the official mascot of Stonkex. 1,000,000,000 $BLUE on Base. Every trade routes fees to the rewards index — hold $BLUE and earn $STONKEX.">
 
+<!-- The social card. Three things here are not stylistic:
+
+     ABSOLUTE URLs. A scraper fetches these from its own servers, with no page
+     to resolve a relative path against — "images/blue_banner.jpg" is the
+     usual reason a shared link renders with a blank space where the art
+     should be.
+
+     1200×630, which every platform documents and none of them cuts into. The
+     supplied banner is 3:1, and a card is not: X crops a large-image card to
+     2:1, and because the banner is WIDER than that, the crop takes the sides
+     rather than the top — 214px off each end, which turns "BLUE" into "BLU"
+     and "STONKEX" into "STONK". images/blue_social.jpg is that same artwork,
+     uncropped, letterboxed onto a 1200×630 ground sampled from its own edges
+     (#fcfcfc, the mode of its border rather than the mean, which the corner
+     cubes had dragged to a muddy blue). X's 2:1 then takes 15px of padding
+     off the top and bottom and never reaches the art.
+
+     And twitter:image is stated rather than left to fall back to og:image.
+     The fallback is real but not universal, and writing it down costs a line.
+-->
 <meta property="og:type" content="website">
+<meta property="og:site_name" content="The Stonkex Bull">
+<meta property="og:url" content="https://blue-psi-five.vercel.app/">
 <meta property="og:title" content="The Stonkex Bull — $BLUE">
 <meta property="og:description" content="Hold $BLUE, earn $STONKEX. 1B total supply on Base chain.">
-<meta property="og:image" content="images/blue_banner_poster.webp">
+<meta property="og:image" content="https://blue-psi-five.vercel.app/images/blue_social.jpg">
+<meta property="og:image:type" content="image/jpeg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="The Stonkex Bull: a blue voxel bull beside the $BLUE wordmark, the official mascot of Stonkex.">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:site" content="@BlueBullStonkex">
+<meta name="twitter:image" content="https://blue-psi-five.vercel.app/images/blue_social.jpg">
+<meta name="twitter:image:alt" content="The Stonkex Bull: a blue voxel bull beside the $BLUE wordmark, the official mascot of Stonkex.">
 <meta name="theme-color" content="#fcfcfc">
 
 <!-- favicon.ico sits at the root because browsers request /favicon.ico on their
      own, regardless of these tags. Every icon is generated from
      images/favicon.png — the Apple one has to be flattened onto white, because
      iOS renders a transparent home-screen icon as black. -->
-<link rel="icon" href="favicon.ico?v=15" sizes="any">
-<link rel="icon" type="image/png" href="images/favicon.png?v=15">
-<link rel="apple-touch-icon" href="images/apple-touch-icon.png?v=15">
-<link rel="manifest" href="site.webmanifest?v=15">
+<link rel="icon" href="favicon.ico?v=16" sizes="any">
+<link rel="icon" type="image/png" href="images/favicon.png?v=16">
+<link rel="apple-touch-icon" href="images/apple-touch-icon.png?v=16">
+<link rel="manifest" href="site.webmanifest?v=16">
 
 <!-- One face, four weights: the design separates label from figure by weight
      and colour, so the family has to carry 400 through 700.
@@ -39,7 +67,7 @@
       media="print" onload="this.media='all'">
 <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"></noscript>
 
-<link rel="stylesheet" href="assets/css/styles.css?v=15">
+<link rel="stylesheet" href="assets/css/styles.css?v=16">
 </head>
 <body>
 
@@ -450,7 +478,7 @@
 <!-- ?v= is the cache buster: run `node scripts/stamp.mjs` on every deploy,
      which moves every ?v= here and `version` in config.js together. Skip it
      and a CDN keeps serving the previous config.js and app.js. -->
-<script src="config.js?v=15"></script>
-<script src="assets/js/app.js?v=15"></script>
+<script src="config.js?v=16"></script>
+<script src="assets/js/app.js?v=16"></script>
 </body>
 </html>
