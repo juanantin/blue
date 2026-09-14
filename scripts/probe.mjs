@@ -48,6 +48,10 @@ const asTopic = (a) => '0x' + '0'.repeat(24) + String(a).toLowerCase().replace(/
 const ENDPOINTS = [RPC_URL, ...(CFG.sources?.holders?.onchain?.rpcUrls || [])]
   .filter((u, i, a) => u && a.indexOf(u) === i);
 
+/* Capability, not weather: this node will never answer, so the next one is
+   tried at once. */
+const CANNOT = /not supported|unsupported|method not found|pruned|not available|header not found|missing trie node|HTTP (40[1-5])|unauthorized|forbidden/i;
+
 const TRANSIENT = /HTTP (408|429|5\d\d)|fetch failed|ECONN|ETIMEDOUT|socket|healthy|timeout/i;
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
@@ -75,7 +79,13 @@ async function rpc(method, params = []) {
         lastErr = err;
         /* A refusal about the REQUEST — a range too wide, a filter a node
            dislikes — must reach the caller, which knows how to shrink it.
-           Only a refusal about the SERVER is worth waiting or moving for. */
+           Only a refusal about the SERVER is worth waiting or moving for, and
+           a server saying it cannot do this AT ALL (no eth_getLogs, no
+           history that old, no access) is worth moving for IMMEDIATELY rather
+           than after three polite retries: a discovery run lost its whole
+           distributor check to one endpoint answering "The method eth_getLogs
+           is not supported" while six others sat unused. */
+        if (CANNOT.test(err.message || '')) break;
         if (!TRANSIENT.test(err.message || '')) throw err;
         await sleep(400 * Math.pow(3, attempt));
       }

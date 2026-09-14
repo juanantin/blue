@@ -1,31 +1,11 @@
 /* ==========================================================================
    What the indexer watches — $BLUE on Base.
    --------------------------------------------------------------------------
-   ⚠ INCOMPLETE. Everything below marked null is filled in from a run of
-   .github/workflows/discover.yml (scripts/discover-token.mjs), which asks the
-   network the questions this sandbox cannot:
+   Every address here was read from the network by .github/workflows/
+   discover.yml (scripts/discover-token.mjs) rather than carried over from the
+   token this site was copied from. The run's own words are quoted per field.
 
-     TOKENS.KEX        the reward token — the quote side of the deepest pair
-     KEX_DECIMALS      READ FROM CHAIN, never assumed. $BOX's reward token has
-                       8, and an 18 there published 25.244695737 as 2.5e-9:
-                       every digit right, the scale out by ten billion. STR and
-                       KEX must not share a constant.
-     CONTRACTS.pool    corroborated by DexScreener resolving the same pair from
-                       the contract address alone
-     CONTRACTS.rewardsIndex
-                       NOT derivable on chain — a routing decision. From
-                       /api/fee-routing?pairs=<token>:<feeLocker>, or off the
-                       platform's own panel.
-     START_BLOCK       the token's first block. Left null the scan would start
-                       at genesis and never converge.
-     HOLDER_SHARE      from $BLUE's own Stockify panel.
-
-   The schedule in .github/workflows/index-rewards.yml stays commented out
-   until they are all real, and data/rewards-state.json's cursor is seeded with
-   START_BLOCK in the same commit — a present state file with a cursor of 0 is
-   read as gospel and scans Base from genesis.
-
-   ⚠ And which on-chain flow is "fees collected" versus "distributed" is not
+   ⚠ Which on-chain flow is "fees collected" versus "distributed" is still not
    self-evident: reconcile against what thestonks.exchange and
    stockify.finance publish for $BLUE before trusting a number — the traps and
    their magnitudes are in worker/README.md.
@@ -36,30 +16,41 @@ export const CHAIN_ID = 8453;                    // Base
 export const TOKENS = {
   // The token people buy — $BLUE, The Stonkex Bull
   STR: '0x1d0c1bE75f32C1238Da27dBB59d21c7DF8D311B2',
-  // The reward token holders are paid in — the quote side of the pair
-  KEX: null,
+  // The reward token holders are paid in — $STONKEX, the quote side of the
+  // pair. symbol() "STONKEX", name() "The Stonks Exchange", read on chain.
+  KEX: '0x5ab000ff9B9FfE0349CE5ffA5fD86f217C3680F5',
 };
 
 export const CONTRACTS = {
-  // The trading pair
-  pool: null,
+  // The trading pair — BLUE/STONKEX on Uniswap v3, the deeper of the token's
+  // two pools by two orders of magnitude.
+  pool: '0xcb0309312718e7c1a54d4B35Be3726Ee38755B82',
   // Where trading fees accrue. This locker is SHARED BY EVERY COIN on the
-  // platform, so no stream may sum it: doing so reports the whole platform's
-  // fees as this token's.
-  feeLocker: null,
-  // The distributor holders are paid from. Per token — which is what makes
+  // platform — it is the same address $BOX uses, which is the proof — so no
+  // stream may sum it: doing so reports the whole platform's fees as this
+  // token's.
+  feeLocker: '0x71D1D363176723f85d98B8B430DF33cde89f0A7f',
+  // The distributor holders are paid from, from /api/fee-routing, which
+  // reports this token's routing as "rewards". Per token — which is what makes
   // summing it this token's flows rather than the platform's. Every stream
   // below watches it.
-  rewardsIndex: null,
+  rewardsIndex: '0x7273A102A1A20dD0eB01C23Ce4b57dAF6160Bf77',
 };
 
-// The block $BLUE launched at. Nothing relevant happened before it, so the
-// scan starts here rather than at genesis.
-export const START_BLOCK = null;
+// The block $BLUE launched at, from /api/coins — and independently from a
+// timestamp search for the pool's own pairCreatedAt, which lands on the same
+// block. Nothing relevant happened before it, so the scan starts here rather
+// than at genesis.
+export const START_BLOCK = 50968736;
 
-/* Decimals, per token, read from each contract rather than assumed. */
+/* Decimals, per token, READ FROM EACH CONTRACT rather than assumed. Both
+   happen to be 18 here — but they are two constants, not one, precisely
+   because on $BOX they differed: its reward token's decimals() returns 8, and
+   sharing a constant there published 25.244695737 as 2.5244695737e-9, every
+   digit right and the scale out by ten billion. A token that is "obviously
+   18" is exactly the one nobody checks. */
 export const STR_DECIMALS = 18;
-export const KEX_DECIMALS = null;
+export const KEX_DECIMALS = 18;
 
 /* Everything that has to be real before a scan means anything. index-rewards
    and the worker both refuse to run while this list is non-empty, because the
@@ -89,11 +80,14 @@ export const STREAMS = [
 ];
 
 /* Share of the outflow that reaches holders — the rest is the protocol's cut.
-   ⚠ UNVERIFIED FOR $BLUE. 0.9 is the platform's usual split and what $BOX's
-   panel reads ("TO HOLDERS 90% · 10% protocol · 0% creator"), but it is a
-   per-token setting: check $BLUE's Stockify panel before publishing a payout.
-   Better still, set PROTOCOL_ADDRESS when it turns up — the cut is then
-   subtracted exactly and survives the percentage changing. */
+   ⚠ NOT YET VERIFIED FOR $BLUE. 0.9 is the platform's usual split and what
+   $BOX's panel reads ("TO HOLDERS 90% · 10% protocol · 0% creator"), but it
+   is a per-token setting, and it is the one multiplier standing between the
+   measured outflow and the figure on the tile. scripts/panel-probe.mjs reads
+   $BLUE's own Stockify panel for it; until that agrees, treat the distributed
+   figure as provisional and do not announce it. Better still, set
+   PROTOCOL_ADDRESS when it turns up — the cut is then subtracted exactly and
+   survives the percentage changing. */
 export const HOLDER_SHARE = 0.9;
 export const PROTOCOL_ADDRESS = null;
 

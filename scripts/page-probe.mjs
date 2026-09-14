@@ -49,7 +49,12 @@ const server = http.createServer(async (req, res) => {
 
 if (!SITE_URL) await new Promise((r) => server.listen(PORT, r));
 
-const browser = await chromium.launch();
+/* CHROMIUM_PATH runs this against a browser that is already on the machine,
+   rather than one `playwright install` fetched. CI does the install and leaves
+   this unset; a sandbox with a pinned Chromium sets it and skips the download.
+   Either way the page under test is identical. */
+const browser = await chromium.launch(
+  process.env.CHROMIUM_PATH ? { executablePath: process.env.CHROMIUM_PATH } : {});
 
 /* MOBILE reproduces the report that started this: a phone showing em dashes
    where a desktop shows figures. Nothing about the network differs here — what

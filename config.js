@@ -9,7 +9,7 @@ window.SITE_CONFIG = {
   /* Build stamp. Shown in the ?debug=1 panel, so you can confirm which version
      a browser actually has rather than guessing at a cache. Bump it together
      with the ?v= on the script tags in index.html whenever you deploy. */
-  version: '1',
+  version: '2',
 
   /* ---- Token ---------------------------------------------------------- */
 
@@ -18,14 +18,15 @@ window.SITE_CONFIG = {
   // resolves without it.
   contractAddress: '0x1d0c1bE75f32C1238Da27dBB59d21c7DF8D311B2',
 
-  // The token holders are paid in — the quote side of the pair. Used to price
-  // "total distributed" in USD when the rewards source doesn't give a USD
-  // figure itself, so the sub-line under that card depends on it.
-  // ⚠ TO BE FILLED from scripts/discover-token.mjs (.github/workflows/
-  // discover.yml): read it off the chain, never off a sibling token — $BOX's
-  // reward token has 8 decimals, not 18, and assuming otherwise published
-  // 2.5e-9 where the answer was 25.24.
-  rewardTokenAddress: null,
+  // $STONKEX, the token holders are paid in — the quote side of the pair, and
+  // what thestonks.exchange's /api/coins entry for $BLUE names as its quote.
+  // Used to price "total distributed" in USD when the rewards source doesn't
+  // give a USD figure itself, so the sub-line under that card depends on it.
+  // Read off Base, not assumed: symbol() "STONKEX", name() "The Stonks
+  // Exchange", decimals() 18 — corroborated by the platform's own
+  // quote_decimals. $BOX's reward token returns 8, and inheriting that here
+  // would be as wrong as inheriting 18 was there.
+  rewardTokenAddress: '0x5ab000ff9B9FfE0349CE5ffA5fD86f217C3680F5',
 
   // Free, keyless, CORS-enabled. Used as the last price source, because it
   // covers tokens DexScreener has no pair for — an index token among them.
@@ -35,9 +36,10 @@ window.SITE_CONFIG = {
   chainId: 8453,    // EVM chain id
 
   // The block $BLUE launched at. The chain scan starts here; nothing relevant
-  // happened before it. ⚠ TO BE FILLED — left null the scan starts at the
-  // token's own history, which is what the discovery run reports.
-  launchBlock: null,
+  // happened before it. Two independent sources agree on it: the platform's
+  // /api/coins block_number, and a timestamp search for the pool's own
+  // pairCreatedAt (2026-09-06T20:33:39Z).
+  launchBlock: 50968736,
 
   /* How the reward token is recognised among everything that touches the
      distributor. Matched case-insensitively against each token's own symbol(),
@@ -47,9 +49,9 @@ window.SITE_CONFIG = {
 
      Matched as a substring, because a platform's wrapper often decorates the
      ticker it wraps — $BOX's reward token answers "AMZNc", not "AMZN", and an
-     exact comparison would have missed it. ⚠ TO BE FILLED from the discovery
-     run's symbol() reading. */
-  rewardTokenSymbol: null,
+     exact comparison would have missed it. Here symbol() reads exactly
+     "STONKEX", verified on chain. */
+  rewardTokenSymbol: 'STONKEX',
 
   /* Holders' share of what leaves the rewards index — the rest is the
      protocol's cut, so the outflow is NOT the distributed figure on its own.
@@ -71,20 +73,25 @@ window.SITE_CONFIG = {
      reports another token's market cap, liquidity and volume. Leave them null
      and the search by contract address is used instead: correct, if slower. */
   contracts: {
-    // ⚠ ALL TO BE FILLED. Until then the page searches DexScreener by contract
-    // address, which is correct — just slower — while a WRONG pool here would
-    // silently report another token's market cap, liquidity and volume.
-    pool: null,
+    /* The trading pair: BLUE/STONKEX on Uniswap v3. From /api/coins, and
+       corroborated by DexScreener, which resolves the same pair from a search
+       by contract address alone — and by it being the deepest of the two by
+       two orders of magnitude ($16.9k against $67 in the v4 BLUE/USDC pool).
+       That depth is why it is named here: DexScreener is asked about THIS
+       pool before it searches, so the thin pool would otherwise be a coin
+       flip on every load. */
+    pool: '0xcb0309312718e7c1a54d4B35Be3726Ee38755B82',
     rewardPool: null,
-    // Where trading fees accrue. SHARED BY EVERY TOKEN on the platform, so it
-    // is never summed: doing that reports the whole platform's fees as this
-    // token's.
-    feeLocker: null,
-    // The distributor holders are paid from — per token, and the only one of
-    // these that is this token's alone. Not derivable on chain: it comes from
-    // /api/fee-routing?pairs=<token>:<feeLocker>, or off the platform panel.
-    // Read by the indexer, not by the page.
-    rewardsIndex: null,
+    /* Where trading fees accrue. SHARED BY EVERY TOKEN on the platform — this
+       is byte-for-byte the same locker $BOX uses — so it is never summed:
+       doing that reports the whole platform's fees as this token's. */
+    feeLocker: '0x71D1D363176723f85d98B8B430DF33cde89f0A7f',
+    /* The distributor holders are paid from — per token, and the only one of
+       these that is this token's alone. Not derivable on chain: it is a
+       routing decision, and /api/fee-routing reports this token's as
+       "rewards" with this index. The owner's Stockify panel link names the
+       same address. Read by the indexer, not by the page. */
+    rewardsIndex: '0x7273A102A1A20dD0eB01C23Ce4b57dAF6160Bf77',
   },
 
   /* ---- Links ---------------------------------------------------------- */
@@ -97,9 +104,7 @@ window.SITE_CONFIG = {
 
     // The two lockups in the footer panel — both hrefs are written from here.
     launchedIn: 'https://www.thestonks.exchange/token/0x1d0c1bE75f32C1238Da27dBB59d21c7DF8D311B2',
-    // ⚠ TO BE FILLED with $BLUE's own Stockify index, from the same panel the
-    // holder share is read off. Falls back to the site root until then.
-    rewardsBy: 'https://www.stockify.finance/',
+    rewardsBy: 'https://www.stockify.finance/indices/0x7273a102a1a20dd0eb01c23ce4b57daf6160bf77',
   },
 
   /* ======================================================================

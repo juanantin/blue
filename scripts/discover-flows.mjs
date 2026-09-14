@@ -78,7 +78,14 @@ async function scan(topics, from, to) {
         topics, fromBlock: '0x' + cursor.toString(16), toBlock: '0x' + end.toString(16),
       }]);
     } catch (err) {
-      if (/too large|range|limit|exceed|more than/i.test(err.message) && span > 500) {
+      /* Narrow for anything that is NOT plainly about the node. Gating this on
+         the words was wrong in three other files before this one: Base's
+         public RPC signals an oversized window as a bare HTTP 500 or 413 —
+         no message, nothing matching "too large" — so a word test never fires
+         and the scan dies on a window it could simply have halved. */
+      const aboutTheNode = /HTTP (40[1-5])|fetch failed|ECONN|ETIMEDOUT|unauthorized|forbidden|not supported/i
+        .test(err.message || '');
+      if (!aboutTheNode && span > 500) {
         span = Math.floor(span / 2);
         continue;
       }

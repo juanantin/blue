@@ -4,14 +4,19 @@ name: Index rewards
 # token holders. State lives in data/rewards-state.json, so each run resumes
 # where the last one stopped — a first backfill may take a few runs.
 #
-# ⚠ THE SCHEDULE IS OFF while worker/src/config.js still carries nulls.
-# A run against an unset rewardsIndex sums nothing and publishes nulls every
-# quarter hour — indistinguishable, on the page, from a site that is broken.
-# Turn the cron back on in the same commit that fills in TOKENS, CONTRACTS
-# (rewardsIndex included), START_BLOCK, the two decimals and HOLDER_SHARE,
-# and seed data/rewards-state.json's cursor with START_BLOCK at the same time:
-# loadState() only falls back to START_BLOCK when that file is ABSENT, so a
-# cursor of 0 in a present file scans Base from genesis and never converges.
+# THE SCHEDULE IS ON. worker/src/config.js is real — TOKENS, CONTRACTS
+# (rewardsIndex included), START_BLOCK and both decimals were read from the
+# network by .github/workflows/discover.yml, not carried over from the token
+# this site was copied from.
+#
+# data/rewards-state.json is committed alongside it, seeded with cursor =
+# START_BLOCK (50968736). Both halves matter. loadState() falls back to
+# START_BLOCK only when that file is ABSENT, so a present file with a cursor
+# of 0 is read as gospel and scans Base from genesis — some six hundred runs
+# of work. And the file is the ONLY thing carrying the backfill between runs,
+# since Actions runners are ephemeral: gitignore it and every run restarts
+# from the seed and the scan never converges. Both failures publish nulls and
+# look exactly like a broken site.
 #
 # This exists because a phone should not have to read 375,000 blocks of Base
 # to see three numbers. The browser scan needs dozens of RPC calls and about a
@@ -21,10 +26,10 @@ name: Index rewards
 # refinement rather than the only source.
 
 on:
-  # schedule:
-  #   # Deliberately off the :00/:15/:30/:45 boundary — GitHub's scheduler is
-  #   # heavily oversubscribed there and delays runs the longest.
-  #   - cron: '7,22,37,52 * * * *'
+  schedule:
+    # Deliberately off the :00/:15/:30/:45 boundary — GitHub's scheduler is
+    # heavily oversubscribed there and delays runs the longest.
+    - cron: '7,22,37,52 * * * *'
   # Also on push to its own inputs. GitHub's scheduler routinely delays a
   # newly added cron by half an hour or more, and dispatching by hand needs a
   # permission not every token carries — neither is a good reason for the site

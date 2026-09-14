@@ -45,6 +45,10 @@ const ENDPOINTS = [
   'https://mainnet.base.org',
 ].filter((u, i, a) => u && a.indexOf(u) === i);
 
+/* Capability, not weather: this node will never answer, so the next one is
+   tried at once rather than after three polite retries. */
+const CANNOT = /not supported|unsupported|method not found|pruned|not available|header not found|missing trie node|HTTP (40[1-5])|unauthorized|forbidden/i;
+
 /* "pruned history unavailable" belongs here, not in the caller's hands: it is
    a statement about THIS NODE's retention, not about the request, so the right
    response is to ask a different node — which is what rotating does. Base's
@@ -74,6 +78,16 @@ async function rpc(method, params = []) {
         return j.result;
       } catch (err) {
         lastErr = err;
+        /* Three kinds of refusal, three responses. A node saying it cannot do
+           this AT ALL — no eth_getLogs, no history that old, no access — is
+           not worth retrying: move to the next endpoint immediately. A node
+           having a bad minute is worth waiting for. Anything else is about
+           the REQUEST, and belongs to the caller, which knows how to shrink
+           it. Rotating on the first of those is what this run was missing:
+           one endpoint answered "The method eth_getLogs is not supported" and
+           the whole distributor check was abandoned with six other endpoints
+           unused. */
+        if (CANNOT.test(err.message || '')) break;
         if (!TRANSIENT.test(err.message || '')) throw err;
         await sleep(400 * Math.pow(3, attempt));
       }
