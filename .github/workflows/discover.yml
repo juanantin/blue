@@ -32,4 +32,7 @@ jobs:
         env:
           TOKEN: ${{ inputs.token }}
           RPC_URL: ${{ secrets.RPC_URL }}
+          # Addresses to test as the distributor: the reward token should flow
+          # both in and out of the real one. Comma-separated.
+          CANDIDATES: '0x7273a102a1a20dd0eb01c23ce4b57daf6160bf77'
         run: node scripts/discover-token.mjs

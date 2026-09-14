@@ -45,7 +45,11 @@ const ENDPOINTS = [
   'https://mainnet.base.org',
 ].filter((u, i, a) => u && a.indexOf(u) === i);
 
-const TRANSIENT = /HTTP (408|429|5\d\d)|fetch failed|ECONN|ETIMEDOUT|socket|healthy|timeout/i;
+/* "pruned history unavailable" belongs here, not in the caller's hands: it is
+   a statement about THIS NODE's retention, not about the request, so the right
+   response is to ask a different node — which is what rotating does. Base's
+   public endpoint answers it for any block more than a few weeks old. */
+const TRANSIENT = /HTTP (408|429|5\d\d)|fetch failed|ECONN|ETIMEDOUT|socket|healthy|timeout|pruned|not available|header not found|missing trie node/i;
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 let rpcCalls = 0;
@@ -126,17 +130,46 @@ const asTokens = (v, dp) => {
 
 /* ---- the block a timestamp falls in ----------------------------------- */
 
-/* Binary search rather than an explorer: no key, no rate limit, and it is the
-   same answer every explorer would be quoting. ~30 calls for the whole chain.
-   Returns the FIRST block at or after `when` (unix seconds). */
+/* No key, no explorer, and — deliberately — no search that starts at block 1.
+   A textbook binary search over [1, head] probes the middle of the chain
+   first, and Base's public nodes answer any block that old with "pruned
+   history unavailable": the search died on its very first probe. So this
+   walks IN from the head instead, where the blocks still exist, using Base's
+   ~2s cadence to convert a time gap into a block gap, and only brackets a
+   binary search once it is within sight. Returns the first block at or after
+   `when` (unix seconds). */
+const BLOCK_SECONDS = 2;
+
 async function blockAtTime(when, head) {
   const tsOf = async (n) => {
-    const b = await rpc('eth_getBlockByNumber', ['0x' + n.toString(16), false]);
+    const b = await rpc('eth_getBlockByNumber', ['0x' + Math.max(1, n).toString(16), false]);
+    if (!b) throw new Error('no block ' + n);
     return parseInt(b.timestamp, 16);
   };
-  let lo = 1;
-  let hi = head;
-  if (await tsOf(hi) < when) return { block: null, note: 'that timestamp is in the future' };
+
+  const headTs = await tsOf(head);
+  if (headTs < when) return { block: null, note: 'that timestamp is in the future' };
+
+  // Step in from the head, correcting the estimate with each real timestamp.
+  let guess = head;
+  let guessTs = headTs;
+  for (let i = 0; i < 12 && Math.abs(guessTs - when) > 120; i++) {
+    const next = Math.max(1, Math.min(head, guess - Math.round((guessTs - when) / BLOCK_SECONDS)));
+    if (next === guess) break;
+    guess = next;
+    guessTs = await tsOf(guess);
+  }
+
+  /* Bracket whichever side the estimate landed on, widening until it straddles
+     the target, then bisect that — a few thousand blocks at most, all of them
+     recent enough to still be served. */
+  let lo = guess;
+  let hi = guess;
+  let span = 2048;
+  while (lo > 1 && await tsOf(lo) > when) { lo = Math.max(1, lo - span); span *= 2; }
+  span = 2048;
+  while (hi < head && await tsOf(hi) < when) { hi = Math.min(head, hi + span); span *= 2; }
+
   while (lo < hi) {
     const mid = Math.floor((lo + hi) / 2);
     if (await tsOf(mid) < when) lo = mid + 1; else hi = mid;
@@ -189,6 +222,49 @@ async function firstTransferBlock(token, around, head) {
     span *= 2;
   }
   return { block: best, note: best === null ? 'no Transfer found near the pair block' : 'earliest seen; window ran out' };
+}
+
+/* ---- does this address actually behave like the distributor? ---------- */
+
+/* rewardsIndex cannot be derived, but a CANDIDATE can be tested: the
+   distributor is the address the reward token flows into and out of. An
+   address with no reward-token flow at all is the wrong one — which is worth
+   finding out here rather than from a dashboard that publishes a confident
+   zero. Pass candidates in CANDIDATES, comma-separated. */
+async function flowsFor(address, rewardToken, from, to) {
+  const asTopic = (a) => '0x' + '0'.repeat(24) + String(a).toLowerCase().replace(/^0x/, '');
+  const count = async (topics) => {
+    let cursor = from;
+    let span = 10000;
+    let total = 0n;
+    let n = 0;
+    while (cursor <= to) {
+      const end = Math.min(cursor + span - 1, to);
+      let logs;
+      try {
+        logs = await rpc('eth_getLogs', [{
+          address: rewardToken, topics,
+          fromBlock: '0x' + cursor.toString(16), toBlock: '0x' + end.toString(16),
+        }]);
+      } catch (err) {
+        /* Narrow on anything that is not plainly about the node: Base's public
+           RPC signals an oversized window as a bare HTTP 500 or 413, with no
+           message to match on. */
+        const aboutTheNode = /HTTP (40[1-5])|fetch failed|ECONN|ETIMEDOUT|unauthorized|forbidden|not supported/i
+          .test(err.message || '');
+        if (!aboutTheNode && span > 200) { span = Math.floor(span / 2); continue; }
+        throw err;
+      }
+      for (const l of logs) { total += (!l.data || l.data === '0x') ? 0n : BigInt(l.data); n++; }
+      cursor = end + 1;
+    }
+    return { total, n };
+  };
+  const [into, outOf] = await Promise.all([
+    count([TRANSFER, null, asTopic(address)]),
+    count([TRANSFER, asTopic(address)]),
+  ]);
+  return { into, outOf };
 }
 
 /* ---- the platform's own answers --------------------------------------- */
@@ -256,24 +332,49 @@ async function main() {
   const isBase = top && top.baseToken?.address?.toLowerCase() === TOKEN.toLowerCase();
   const reward = top ? (isBase ? top.quoteToken : top.baseToken) : null;
 
+  /* Every stage below is allowed to fail on its own. The summary is the whole
+     point of the run, and a thrown error in stage three used to take the two
+     stages that had already succeeded down with it. */
+  const attempt = (label, fn, fallback) => fn().catch((e) => {
+    console.log(`\n${label}: FAILED ${e.message}`);
+    return typeof fallback === 'function' ? fallback(e) : fallback;
+  });
+
   /* 2. what each of the two tokens says about itself ---------------------- */
-  const tokenMeta = await meta(TOKEN).catch((e) => ({ failed: e.message }));
-  const rewardMeta = reward ? await meta(reward.address).catch((e) => ({ failed: e.message })) : null;
+  const tokenMeta = await attempt('token metadata', () => meta(TOKEN), (e) => ({ failed: e.message }));
+  const rewardMeta = reward
+    ? await attempt('reward metadata', () => meta(reward.address), (e) => ({ failed: e.message }))
+    : null;
 
   /* 3. when it started ---------------------------------------------------- */
-  const head = parseInt(await rpc('eth_blockNumber'), 16) - 5;
+  const head = await attempt('head block', async () => parseInt(await rpc('eth_blockNumber'), 16) - 5, null);
   let pairBlock = { block: null, note: 'no pairCreatedAt' };
-  if (top?.pairCreatedAt) pairBlock = await blockAtTime(Math.floor(top.pairCreatedAt / 1000), head);
-  const firstXfer = pairBlock.block
-    ? await firstTransferBlock(TOKEN, pairBlock.block, head)
+  if (head && top?.pairCreatedAt) {
+    pairBlock = await attempt('pair block', () => blockAtTime(Math.floor(top.pairCreatedAt / 1000), head),
+      (e) => ({ block: null, note: e.message }));
+  }
+  const firstXfer = (head && pairBlock.block)
+    ? await attempt('first transfer', () => firstTransferBlock(TOKEN, pairBlock.block, head),
+        (e) => ({ block: null, note: e.message }))
     : { block: null, note: 'no pair block to search around' };
 
+  /* 3b. do the candidate distributors hold reward-token flow? -------------- */
+  const launchBlock = firstXfer.block ?? pairBlock.block;
+  const candidates = (process.env.CANDIDATES || '').split(',').map((a) => a.trim()).filter(Boolean);
+  const candidateFlows = [];
+  for (const addr of candidates) {
+    if (!reward || !launchBlock || !head) { candidateFlows.push([addr, null]); continue; }
+    candidateFlows.push([addr, await attempt(`candidate ${addr}`,
+      () => flowsFor(addr, reward.address, launchBlock, head), null)]);
+  }
+
   /* 4. what the platform routed ------------------------------------------- */
-  const plat = await platform(TOKEN);
+  const plat = await attempt('platform', () => platform(TOKEN),
+    (e) => ({ coins: null, feeRouting: null, errors: [e.message] }));
 
   /* -------- the part worth quoting, last: job logs come back as a tail ---- */
   console.log('\n=== SUMMARY =============================================');
-  console.log(`head block  ${head}`);
+  console.log(`head block  ${head ?? '?'}`);
 
   const line = (label, m) => {
     if (!m) { console.log(`${label}  (none)`); return; }
@@ -295,6 +396,19 @@ async function main() {
   console.log(`token's first Transfer  block ${firstXfer.block ?? '?'}` +
               `${firstXfer.note ? ' (' + firstXfer.note + ')' : ''}`);
 
+  if (candidateFlows.length) {
+    console.log('\n--- candidate distributors (reward-token flow since launch) ---');
+    for (const [addr, f] of candidateFlows) {
+      if (!f) { console.log(`${addr}  (not measured)`); continue; }
+      const dp = rewardMeta && !rewardMeta.failed && rewardMeta.decimals !== null ? rewardMeta.decimals : null;
+      const show = (v) => (dp === null ? `${v} base units (decimals unread)` : asTokens(v, dp));
+      console.log(`${addr}`);
+      console.log(`    in  ${show(f.into.total)}  (${f.into.n} transfers)`);
+      console.log(`    out ${show(f.outOf.total)}  (${f.outOf.n} transfers)`);
+      if (!f.into.n && !f.outOf.n) console.log('    → no reward-token flow: this is NOT the distributor');
+    }
+  }
+
   console.log('\n--- platform ---');
   if (plat.coins) console.log('coins entry: ' + JSON.stringify(plat.coins, null, 2));
   else console.log(`coins entry: not found${plat.coinsCount ? ` (searched ${plat.coinsCount})` : ''}`);
@@ -303,7 +417,7 @@ async function main() {
   for (const e of plat.errors) console.log(`  ! ${e}`);
 
   console.log('\n--- paste into config.js ---');
-  const launch = firstXfer.block ?? pairBlock.block;
+  const launch = launchBlock;
   console.log(`  contractAddress: '${TOKEN}',`);
   console.log(`  rewardTokenAddress: ${reward ? `'${reward.address}'` : 'null'},`);
   console.log(`  rewardTokenSymbol: ${rewardMeta && !rewardMeta.failed ? `'${rewardMeta.symbol}'` : 'null'},`);
