@@ -89,6 +89,70 @@ a { color: inherit; text-decoration: none; }
 }
 
 /* ==========================================================================
+   Falling cubes — the artwork's own confetti, behind everything
+
+   The banner is a voxel bull in a field of drifting cubes, and the page
+   already carries a static isometric tile; these are the same shapes let
+   loose. Decorative in the strict sense: aria-hidden, pointer-events: none,
+   and nothing on the page depends on them.
+
+   Fixed rather than scrolled, so they fall past every section instead of
+   sitting in one. z-index: -1 puts them above the body's own background and
+   behind all in-flow content — which means the cards, being opaque, hide
+   them, and they read in the gutters and between sections rather than under
+   the figures.
+
+   Two properties animate, transform and nothing else, so the whole layer
+   composites on the GPU and never triggers layout. Each cube's size, lane,
+   speed, drift, spin and start offset come from inline custom properties in
+   the markup; the delays are NEGATIVE, so the page opens mid-fall rather than
+   with sixteen cubes queued at the ceiling.
+   ========================================================================== */
+
+:root {
+  --cube-blue:  url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 28'><path d='M12 1 23 7.5 12 14 1 7.5Z' fill='%235b8ff5'/><path d='M1 7.5 12 14v13L1 20.5Z' fill='%230b53e8'/><path d='M23 7.5 12 14v13l11-6.5Z' fill='%230a3ca6'/></svg>");
+  --cube-green: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 28'><path d='M12 1 23 7.5 12 14 1 7.5Z' fill='%236fdc9a'/><path d='M1 7.5 12 14v13L1 20.5Z' fill='%232fbf6a'/><path d='M23 7.5 12 14v13l11-6.5Z' fill='%231c8f4e'/></svg>");
+}
+
+.cubes {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.cubes i {
+  position: absolute;
+  top: 0;
+  left: var(--x);
+  display: block;
+  width: var(--s);
+  height: calc(var(--s) * 1.1667);   /* the cube SVG's own 24:28 */
+  background: center / contain no-repeat var(--cube-blue);
+  opacity: var(--o);
+  animation: cube-fall var(--d) linear var(--delay) infinite;
+}
+
+.cubes i.is-green { background-image: var(--cube-green); }
+
+@keyframes cube-fall {
+  from { transform: translate3d(0, -20vh, 0) rotate(0deg); }
+  to   { transform: translate3d(var(--drift), 120vh, 0) rotate(var(--spin)); }
+}
+
+/* Decoration is the first thing to go when someone asks for less motion. */
+@media (prefers-reduced-motion: reduce) {
+  .cubes { display: none; }
+}
+
+/* Thinner on a phone: the same count in a third of the width reads as weather
+   rather than as a few cubes drifting past. */
+@media (max-width: 620px) {
+  .cubes i:nth-child(3n) { display: none; }
+}
+
+/* ==========================================================================
    Hero
    ========================================================================== */
 
@@ -129,13 +193,17 @@ a { color: inherit; text-decoration: none; }
   gap: 14px;
 }
 
+/* Square, because there is no label to set the width any more: the padding
+   that framed "X (Twitter)" would leave a lone 19px glyph adrift in a lozenge
+   three times its width. The .sr-only span inside contributes no box. */
 .btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 10px;
   min-height: 52px;
-  padding: 0 26px;
+  width: 52px;
+  padding: 0;
   border: 1px solid var(--line-strong);
   border-radius: var(--r-btn);
   background: var(--surface);
@@ -178,11 +246,11 @@ a { color: inherit; text-decoration: none; }
   gap: 8px;
   padding: 9px 16px;
   border-radius: var(--r-btn);
-  background: #14110f;
+  background: var(--ink);
   color: #fff;
   font-size: 13.5px;
   white-space: nowrap;
-  box-shadow: 0 8px 22px rgba(20,17,15,.22);
+  box-shadow: 0 8px 22px rgba(13,18,32,.24);
   opacity: 0;
   transform: translate(-50%, -6px) scale(.96);
   pointer-events: none;
@@ -555,7 +623,7 @@ a { color: inherit; text-decoration: none; }
 
   .actions { padding: 4px 14px 22px; gap: 10px; }
   .actions__inner { gap: 10px; }
-  .btn { min-height: 42px; padding: 0 14px; font-size: 13.5px; }
+  .btn { min-height: 46px; width: 46px; }
 
   .wrap { padding: 0 14px; }
 
