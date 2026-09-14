@@ -6,7 +6,8 @@ loads only the derived files one directory up.
 
 | File | What it is | What comes from it |
 |---|---|---|
-| `bull_mark.png` | The voxel bull, 994×996 | `images/favicon.png`, `icon-192`, `icon-512`, `apple-touch-icon`, `/favicon.ico` — all cropped to the head, because the full scene reads as noise at 16px |
+| `../blue_icon.png` | The bull cut out on transparency, 1000×853, supplied as the mark | every icon: `images/favicon.png`, `icon-192`, `icon-512`, `apple-touch-icon`, `/favicon.ico` — trimmed to its own alpha bounds, padded to a square with 4% air |
+| `bull_mark.png` | The voxel bull on its white scene, 994×996 | nothing now; it was the icon source before a cut-out was supplied |
 | `blue_banner_master.mp4` | The header clip as delivered: 960×304, 10s, **with** an audio track | `images/blue_banner.mp4` (audio stripped, CRF 26, faststart — 3.3 MB → 0.9 MB) and `images/blue_banner_poster.webp` (its own first frame) |
 | `../blue_banner.jpg` | The banner as a still, 1280×426 (3:1), supplied for sharing | `images/blue_social.jpg` — the same art letterboxed to 1200×630, because a 3:1 image loses its wordmark to a card crop |
 | `blue_trailer.MOV` | A 24s 1280×720 trailer, with sound | `images/blue_trailer.mp4` (H.264 in an mp4 container — a .MOV is not reliably playable outside Safari; 7.8 MB → 3.8 MB) and `images/blue_trailer_poster.webp` (the frame at 8s) |
@@ -39,6 +40,27 @@ card.paste(art, (0, (630 - art.height) // 2))
 card.save('images/blue_social.jpg', 'JPEG', quality=88, optimize=True)
 EOF
 ```
+
+```bash
+# every icon, from the supplied cut-out
+python3 - <<'EOF'
+from PIL import Image
+src = Image.open('images/blue_icon.png').convert('RGBA')
+art = src.crop(src.split()[-1].getbbox())        # trim to the alpha bounds
+side = max(art.size) + round(max(art.size) * 0.04)
+sq = Image.new('RGBA', (side, side), (0, 0, 0, 0))
+sq.paste(art, ((side - art.width) // 2, (side - art.height) // 2), art)
+for path, size in (('images/favicon.png',128), ('images/icon-192.png',192), ('images/icon-512.png',512)):
+    sq.resize((size, size), Image.LANCZOS).save(path, optimize=True)
+apple = Image.new('RGB', (180,180), (255,255,255))          # iOS paints transparency black
+apple.paste(sq.resize((180,180), Image.LANCZOS), (0,0), sq.resize((180,180), Image.LANCZOS))
+apple.save('images/apple-touch-icon.png', optimize=True)
+sq.resize((48,48), Image.LANCZOS).save('favicon.ico', sizes=[(16,16),(32,32),(48,48)])
+EOF
+```
+
+Then `node scripts/stamp.mjs`, which moves every `?v=` in `index.html` so
+browsers drop the icon they have cached.
 
 **The HEADER poster must stay the clip's own first frame.** It autoplays, so
 any other still makes the hand-off from poster to playback jump. The trailer
