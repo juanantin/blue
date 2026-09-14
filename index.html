@@ -18,10 +18,10 @@
      own, regardless of these tags. Every icon is generated from
      images/favicon.png — the Apple one has to be flattened onto white, because
      iOS renders a transparent home-screen icon as black. -->
-<link rel="icon" href="favicon.ico?v=2" sizes="any">
-<link rel="icon" type="image/png" href="images/favicon.png?v=2">
-<link rel="apple-touch-icon" href="images/apple-touch-icon.png?v=2">
-<link rel="manifest" href="site.webmanifest?v=2">
+<link rel="icon" href="favicon.ico?v=3" sizes="any">
+<link rel="icon" type="image/png" href="images/favicon.png?v=3">
+<link rel="apple-touch-icon" href="images/apple-touch-icon.png?v=3">
+<link rel="manifest" href="site.webmanifest?v=3">
 
 <!-- One face, four weights: the design separates label from figure by weight
      and colour, so the family has to carry 400 through 700.
@@ -39,7 +39,7 @@
       media="print" onload="this.media='all'">
 <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"></noscript>
 
-<link rel="stylesheet" href="assets/css/styles.css?v=2">
+<link rel="stylesheet" href="assets/css/styles.css?v=3">
 </head>
 <body>
 
@@ -235,6 +235,25 @@
     <span id="legend-text">Reading the chain…</span>
   </p>
 
+  <!-- ===================== TRAILER ===================== -->
+  <!-- Unlike the hero, this one carries sound and runs 24 seconds, so it
+       waits to be asked: native controls, no autoplay, and preload="none" so
+       none of its 3.8 MB is fetched until someone presses play. The poster is
+       a frame from the middle rather than the clip's first, which is a
+       deliberate exception to the rule the hero follows — that rule exists to
+       make poster → AUTOPLAY seamless, and this clip's own opening frame is
+       an out-of-focus cube that says nothing about what the trailer is. -->
+  <section class="trailer" aria-label="Trailer">
+    <video
+      class="trailer__media"
+      poster="images/blue_trailer_poster.webp"
+      width="1280" height="720"
+      controls playsinline preload="none"
+      aria-label="$BLUE trailer">
+      <source src="images/blue_trailer.mp4" type="video/mp4">
+    </video>
+  </section>
+
   <!-- ===================== TOKEN FACTS ===================== -->
   <!-- Fixed properties of the token, so they are written here rather than
        fetched: nothing on chain can change them. -->
@@ -305,16 +324,13 @@
 </main>
 
 <footer class="foot">
-  <!-- The affiliation notice leads, ahead of the risk line: it is the one thing
-       a reader who arrived from the artwork needs to see. -->
-  <p class="foot__notice">$BLUE is an independent community meme token. It is not affiliated with, endorsed by, or connected to any exchange, brokerage, index provider or listed company, and it represents no claim on any of them.</p>
   <p class="foot__fine">Not financial advice. Crypto assets are volatile — do your own research.</p>
 </footer>
 
 <!-- ?v= is the cache buster: run `node scripts/stamp.mjs` on every deploy,
      which moves every ?v= here and `version` in config.js together. Skip it
      and a CDN keeps serving the previous config.js and app.js. -->
-<script src="config.js?v=2"></script>
-<script src="assets/js/app.js?v=2"></script>
+<script src="config.js?v=3"></script>
+<script src="assets/js/app.js?v=3"></script>
 </body>
 </html>
