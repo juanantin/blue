@@ -13,12 +13,18 @@ import { START_BLOCK, TOKENS, CONTRACTS } from '../src/config.js';
 const word = (n) => '0x' + BigInt(n).toString(16).padStart(64, '0');
 const E18 = 10n ** 18n;
 
-/* The reward token is 8 decimals — AMZNc's own decimals() says so — and these
-   fixtures are denominated in it. Hardcoded rather than imported from the
-   config: a test that derives its scale from the code under test would have
-   agreed with the 18 that published 25.244695737 AMZNc as 2.5e-9, and gone
-   green while every reward figure on the site was out by ten billion. */
-const EKEX = 10n ** 8n;
+/* The reward token's decimals, WRITTEN OUT rather than imported from the
+   config: a test that derives its scale from the code under test cannot catch
+   a wrong scale — it agrees with whatever it is given, goes green, and leaves
+   every reward figure on the site out by a power of ten.
+
+   For $BLUE the reward token is $STONKEX, whose decimals() returns 18 —
+   verified on chain by the discovery run, not assumed from it being the usual
+   answer. On $BOX this constant was 8 (AMZNc), and the 18 that looked obvious
+   there published 25.244695737 as 2.5e-9. So: when this repo is pointed at a
+   new token, this line changes to that token's reading, and this test failing
+   after a config change is the whole point of it. */
+const EKEX = 10n ** 18n;
 
 function fakeKV() {
   const store = new Map();

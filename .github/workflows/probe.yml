@@ -14,6 +14,7 @@ on:
     paths:
       - scripts/probe.mjs
       - scripts/page-probe.mjs
+      - scripts/panel-probe.mjs
       - .github/workflows/probe.yml
       # The page probe exists to test these two, so a change to either is
       # exactly when it should run.
@@ -76,12 +77,21 @@ jobs:
           SITE_URL: ${{ vars.SITE_URL }}
         run: node scripts/page-probe.mjs
 
-      # Last, deliberately. Reading these logs through the API returns only the
-      # TAIL of the job, and the browser steps are thousands of lines of CORS
-      # and retry noise — so a chain answer printed first is unreadable by the
-      # time anyone asks for it. The facts worth quoting go at the end.
+      # Reading these logs through the API returns only the TAIL of the job,
+      # and the browser steps are thousands of lines of CORS and retry noise —
+      # so anything printed first is unreadable by the time anyone asks for
+      # it. The two steps whose output is meant to be quoted go last.
       - name: Probe the chain
         env:
           RPC_URL: ${{ inputs.rpc_url }}
           START_BLOCK: ${{ inputs.start_block }}
         run: node scripts/probe.mjs
+
+      # Last of all: what the platform itself publishes, printed beside what
+      # this site publishes. A chain scan cannot check its own assumptions —
+      # which flow is "fees", and what share of the outflow reaches holders —
+      # and those are the assumptions that turn a correct measurement into a
+      # wrong tile.
+      - name: Read the platform's own panels
+        if: always()
+        run: node scripts/panel-probe.mjs
