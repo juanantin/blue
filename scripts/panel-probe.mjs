@@ -47,9 +47,14 @@ const TARGETS = [
   ['thestonks (launch page)', CFG.links?.launchedIn],
 ].filter(([, url]) => url);
 
-/* Lines worth quoting: a percentage split, a total, a holder count. Printing
-   the whole page would bury them — these pages are mostly chrome. */
-const INTERESTING = /(\d+\s*%)|holder|distribut|reward|fee|claim|protocol|creator|total|supply|index/i;
+/* How much of the page to print. Filtering to "interesting" lines was the
+   first attempt and it failed at the only job that matters: these panels put
+   a label and its figure in separate elements, so a keyword filter kept
+   "PAID TO HOLDERS" and dropped the number underneath it. The split was
+   readable; the totals, which are the thing being reconciled, were gone.
+   Order carries the meaning here, so the text is printed as it stands and the
+   reader does the pairing. */
+const MAX_LINES = Number(process.env.MAX_LINES || 140);
 
 const browser = await chromium.launch(
   process.env.CHROMIUM_PATH ? { executablePath: process.env.CHROMIUM_PATH } : {});
@@ -67,14 +72,13 @@ for (const [label, url] of TARGETS) {
     await page.waitForTimeout(6000);
 
     const text = await page.evaluate(() => document.body.innerText || '');
-    const lines = text.split('\n').map((l) => l.trim()).filter(Boolean);
-    const seen = new Set();
-    const keep = lines.filter((l) => l.length < 120 && INTERESTING.test(l) && !seen.has(l) && seen.add(l));
-    if (!keep.length) {
-      console.log('  (nothing matched — the page may not have rendered; check it by hand)');
-      console.log('  first lines seen: ' + JSON.stringify(lines.slice(0, 8)));
+    const lines = text.split('\n').map((l) => l.trim()).filter(Boolean)
+      .map((l) => (l.length > 160 ? l.slice(0, 157) + '…' : l));
+    if (!lines.length) {
+      console.log('  (the page rendered nothing — check it by hand)');
     } else {
-      for (const l of keep.slice(0, 60)) console.log('  ' + l);
+      for (const l of lines.slice(0, MAX_LINES)) console.log('  ' + l);
+      if (lines.length > MAX_LINES) console.log(`  … ${lines.length - MAX_LINES} more lines`);
     }
   } catch (e) {
     console.log(`  FAILED ${e.message}`);
