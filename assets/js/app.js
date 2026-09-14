@@ -26,29 +26,29 @@
      Formatting
      --------------------------------------------------------------------- */
 
-  /* Cents throughout on money, because the cards are read side by side and a
-     rounded figure next to an exact one looks like a bug. Counts stay whole:
-     there is no such thing as a third of a holder. */
-  var nf2 = new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  /* WHOLE NUMBERS on every tile. The cards are read side by side and at a
+     glance, and decimals there are noise: nobody is checking a market cap to
+     the cent, and "72,834.79 STONKEX" says nothing "72,835 STONKEX" does not.
+
+     The one exception in both formatters below is an amount that rounds AWAY
+     to nothing. "$0" or "0" would report a real figure as none, which is a
+     different and much worse error than showing a decimal — so a value under
+     one unit keeps enough places to stay visible. That case is live: the very
+     first fees to arrive after a launch are fractions. */
   var nf0 = new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 });
 
-  /* The reward token carries two decimals: a unit worth ~$258 is paid out in
-     fractions, so whole numbers would erase the figure. */
-  var nfTok = new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  // Only for the vanishing case above — enough places that a small real
+  // amount survives, and never so many that it turns into a scale readout.
+  var nfFine = new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 6 });
 
-  // …with more places only where two would round a real amount away to 0.00.
-  var nfTokFine = new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 6 });
-
-  /* Money and counts are whole — cents on a market cap are noise — but a sum
-     under a dollar keeps them, since "$0" would report a real amount as none. */
   function usd(n) {
-    if (n !== 0 && Math.abs(n) < 1) return '$' + nfTok.format(n);
+    if (n !== 0 && Math.abs(n) < 1) return '$' + nfFine.format(n);
     return '$' + nf0.format(Math.round(n));
   }
 
   function amount(n) {
-    var two = nfTok.format(n);
-    return (n !== 0 && Number(two.replace(/,/g, '')) === 0) ? nfTokFine.format(n) : two;
+    if (n !== 0 && Math.round(n) === 0) return nfFine.format(n);
+    return nf0.format(Math.round(n));
   }
   function count(n) { return nf0.format(Math.round(n)); }
 

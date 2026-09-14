@@ -18,10 +18,10 @@
      own, regardless of these tags. Every icon is generated from
      images/favicon.png — the Apple one has to be flattened onto white, because
      iOS renders a transparent home-screen icon as black. -->
-<link rel="icon" href="favicon.ico?v=3" sizes="any">
-<link rel="icon" type="image/png" href="images/favicon.png?v=3">
-<link rel="apple-touch-icon" href="images/apple-touch-icon.png?v=3">
-<link rel="manifest" href="site.webmanifest?v=3">
+<link rel="icon" href="favicon.ico?v=4" sizes="any">
+<link rel="icon" type="image/png" href="images/favicon.png?v=4">
+<link rel="apple-touch-icon" href="images/apple-touch-icon.png?v=4">
+<link rel="manifest" href="site.webmanifest?v=4">
 
 <!-- One face, four weights: the design separates label from figure by weight
      and colour, so the family has to carry 400 through 700.
@@ -39,7 +39,7 @@
       media="print" onload="this.media='all'">
 <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"></noscript>
 
-<link rel="stylesheet" href="assets/css/styles.css?v=3">
+<link rel="stylesheet" href="assets/css/styles.css?v=4">
 </head>
 <body>
 
@@ -236,23 +236,78 @@
   </p>
 
   <!-- ===================== TRAILER ===================== -->
-  <!-- Unlike the hero, this one carries sound and runs 24 seconds, so it
-       waits to be asked: native controls, no autoplay, and preload="none" so
-       none of its 3.8 MB is fetched until someone presses play. The poster is
-       a frame from the middle rather than the clip's first, which is a
-       deliberate exception to the rule the hero follows — that rule exists to
-       make poster → AUTOPLAY seamless, and this clip's own opening frame is
-       an out-of-focus cube that says nothing about what the trailer is. -->
+  <!-- Plays when it is reached, loops, and starts MUTED — which is not a
+       stylistic choice: every browser blocks an autoplay that makes noise,
+       and one that tries is left paused showing a dead poster. The controls
+       stay so the sound is one click away, and it pauses again when it
+       scrolls out of view rather than playing to an empty room.
+
+       preload="none" holds all 3.8 MB back until the script below asks: a
+       visitor who never scrolls this far pays nothing for it, which is most
+       of the point of putting it below the dashboard.
+
+       The poster is a frame from the middle rather than the clip's first —
+       the hero's rule, kept where it applies. It exists so poster → playback
+       does not jump, and this clip opens on an out-of-focus cube; the frame
+       that says what the trailer IS is worth more than a seamless hand-off
+       on a clip nobody is watching at the instant it starts. -->
   <section class="trailer" aria-label="Trailer">
     <video
-      class="trailer__media"
+      class="trailer__media" id="trailer-video"
       poster="images/blue_trailer_poster.webp"
       width="1280" height="720"
-      controls playsinline preload="none"
-      aria-label="$BLUE trailer">
-      <source src="images/blue_trailer.mp4" type="video/mp4">
-    </video>
+      controls loop muted playsinline preload="none"
+      aria-label="$BLUE trailer"
+      data-src="images/blue_trailer.mp4"></video>
   </section>
+
+  <script>
+    (function () {
+      var v = document.getElementById('trailer-video');
+      if (!v || !v.dataset.src) return;
+
+      /* The source is attached on the first approach and never re-attached:
+         setting src again would restart the download and the clip. */
+      var attached = false;
+      function attach() {
+        if (attached) return;
+        attached = true;
+        v.src = v.dataset.src;
+        v.preload = 'auto';
+        v.load();
+      }
+
+      /* Someone who asked for less motion gets a still with controls: the
+         source attaches on their first touch of the element, so pressing play
+         still works without anything having downloaded on its own. */
+      var still = !window.matchMedia || window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      if (still || !('IntersectionObserver' in window)) {
+        ['pointerdown', 'touchstart', 'focus'].forEach(function (e) {
+          v.addEventListener(e, attach, { once: true });
+        });
+        return;
+      }
+
+      /* Half of it on screen before anything happens — a clip that starts
+         while one pixel is showing reads as an accident. play() is a promise
+         that rejects when the browser declines; ignored, because the poster
+         and the controls are already the right fallback. */
+      new IntersectionObserver(function (entries) {
+        entries.forEach(function (entry) {
+          if (entry.isIntersecting) {
+            attach();
+            var p = v.play();
+            if (p && p.catch) p.catch(function () {});
+          } else {
+            // Unconditional: pausing an already-paused element is a no-op, and
+            // the guard it replaces could not be tested in a browser where
+            // nothing plays.
+            v.pause();
+          }
+        });
+      }, { threshold: 0.5 }).observe(v);
+    })();
+  </script>
 
   <!-- ===================== TOKEN FACTS ===================== -->
   <!-- Fixed properties of the token, so they are written here rather than
@@ -330,7 +385,7 @@
 <!-- ?v= is the cache buster: run `node scripts/stamp.mjs` on every deploy,
      which moves every ?v= here and `version` in config.js together. Skip it
      and a CDN keeps serving the previous config.js and app.js. -->
-<script src="config.js?v=3"></script>
-<script src="assets/js/app.js?v=3"></script>
+<script src="config.js?v=4"></script>
+<script src="assets/js/app.js?v=4"></script>
 </body>
 </html>
