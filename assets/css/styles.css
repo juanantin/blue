@@ -29,9 +29,30 @@
 
   --base-blue:   #0052ff;
 
-  /* Shape */
-  --r-btn:       12px;
-  --r-card:      16px;
+  /* Shape. The banner is a bull built out of cubes and a wordmark extruded in
+     hard steps, and the page is cut to match: NO radius anywhere. Right
+     angles are the whole of the pixel-art idea — a rounded corner is an
+     anti-aliased curve, which is the one thing voxels never have.
+
+     Notching the corners was the first attempt and it was worse: at card size
+     it read as a cinema ticket, and on a 52px icon the four cuts met in the
+     middle and turned the tile into a plus sign.
+
+     Depth instead comes from --stack, a shadow drawn as two offset blocks
+     with no blur — the same staircase the wordmark's bevel steps down — over
+     one soft shadow that does the actual lifting. */
+  --face:        linear-gradient(176deg, #ffffff 0%, #fdfeff 46%, #f4f8ff 100%);
+  /* The page is the banner's own near-white, so a card cannot separate itself
+     by being lighter — there is nowhere lighter to go. It separates by EDGE
+     and by DEPTH instead: a definite 2px outline, then two solid blocks
+     stepping away from it. Both are pitched to stay quiet on white; a darker
+     stack turns the dashboard into a comic panel. */
+  --face-edge:   #ccdaf1;
+  --stack:       4px 4px 0 #dfe8fa, 8px 8px 0 #edf2fd, 0 16px 26px rgba(13, 18, 32, .08);
+  --stack-lift:  5px 5px 0 #c9dbfd, 10px 10px 0 #e4edfe, 0 22px 36px rgba(11, 83, 232, .18);
+
+  --r-btn:       0px;
+  --r-card:      0px;
 
   --shadow-card: 0 1px 2px rgba(20,17,15,.03), 0 6px 18px rgba(30,60,120,.06);
 
@@ -218,8 +239,13 @@ a { color: inherit; text-decoration: none; }
 
 /* Square, because there is no label to set the width any more: the padding
    that framed "X (Twitter)" would leave a lone 19px glyph adrift in a lozenge
-   three times its width. The .sr-only span inside contributes no box. */
+   three times its width. The .sr-only span inside contributes no box.
+
+   Cut and lit like the cards, and sitting on a hard 4px block of its own —
+   which is what makes the press below feel like a real key travelling into
+   its own shadow rather than a rectangle changing colour. */
 .btn {
+  position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -227,25 +253,43 @@ a { color: inherit; text-decoration: none; }
   min-height: 52px;
   width: 52px;
   padding: 0;
-  border: 1px solid var(--line-strong);
-  border-radius: var(--r-btn);
-  background: var(--surface);
+  border: 2px solid var(--face-edge);
+  background: var(--face);
+  box-shadow: 4px 4px 0 #e9effc, 0 8px 14px rgba(13, 18, 32, .07);
   font: inherit;
   font-size: 15.5px;
   font-weight: 500;
   color: var(--ink);
   white-space: nowrap;
   cursor: pointer;
-  transition: transform .16s ease, box-shadow .16s ease, border-color .16s ease;
+  transition: transform .14s ease, filter .14s ease;
 }
+
+/* The lit top edge, as on the cards. */
+.btn::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto;
+  height: 2px;
+  background: #fff;
+}
+
+.btn > * { position: relative; z-index: 1; }
 
 .btn:hover {
-  transform: translateY(-1px);
-  border-color: var(--accent);
-  box-shadow: 0 4px 14px rgba(30,60,120,.12);
+  transform: translate(-2px, -2px);
+  border-color: #c2d5f6;
+  box-shadow: 6px 6px 0 var(--accent-soft), 0 14px 20px rgba(11, 83, 232, .18);
 }
+.btn:hover .btn__icon { color: var(--accent-deep); }
 
-.btn:active { transform: translateY(0); box-shadow: none; }
+/* Travels INTO its own shadow: the button moves exactly as far as the block
+   beneath it shrinks, so the two read as one object being pressed rather than
+   as a rectangle changing colour. */
+.btn:active {
+  transform: translate(4px, 4px);
+  box-shadow: 0 0 0 #e9effc, 0 2px 4px rgba(13, 18, 32, .12);
+}
 
 .btn__icon { width: 19px; height: 19px; flex: none; color: var(--ink); }
 
@@ -296,24 +340,37 @@ a { color: inherit; text-decoration: none; }
   gap: 18px;
 }
 
-/* Label and figure left, icon right — the disc is the card's only colour */
+/* Label and figure left, icon right — the tile is the card's only colour. The
+   card sits on its own staircase of shadow blocks and steps further out of
+   the page on hover, moving up AND left so it travels along the diagonal the
+   stack is offset on rather than sliding across it. */
 .stat {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 18px;
   padding: 24px 26px;
-  border: 1px solid var(--line);
-  border-radius: var(--r-card);
-  background: var(--surface);
-  box-shadow: var(--shadow-card);
+  border: 2px solid var(--face-edge);
+  background: var(--face);
+  box-shadow: var(--stack);
   transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
 }
 
+/* The lit top edge. Every voxel in the artwork has one, and it is the whole
+   difference between a flat rectangle and a moulded surface. */
+.stat::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto;
+  height: 2px;
+  background: #fff;
+}
+
 .stat:hover {
-  transform: translateY(-2px);
-  border-color: var(--line-strong);
-  box-shadow: 0 2px 4px rgba(20,17,15,.04), 0 14px 30px rgba(30,60,120,.12);
+  transform: translate(-2px, -3px);
+  border-color: #c2d5f6;
+  box-shadow: var(--stack-lift);
 }
 
 .stat__body { min-width: 0; }
@@ -340,6 +397,10 @@ a { color: inherit; text-decoration: none; }
   line-height: 1.15;
   color: var(--ink);
   word-break: break-word;
+  /* Same-width digits, so a figure that ticks up does not jostle the label
+     beside it — and so the six cards line up as a set rather than as six
+     independent numbers. */
+  font-variant-numeric: tabular-nums;
 }
 
 .stat__unit {
@@ -386,15 +447,25 @@ a { color: inherit; text-decoration: none; }
 .stat__value, .stat__sub b { font-variant-numeric: tabular-nums; }
 
 /* One icon spec for the whole set: a tan disc with a drawn glyph inside */
+/* Not discs any more: square blue blocks, lit the way the voxels are — a
+   bright top face, a deeper bottom, a hard block of shadow beneath. The icon
+   inside goes white, which is what turns a pale badge into the card's one
+   piece of colour. */
 .stat__icon,
 .fact__icon {
+  position: relative;
   flex: none;
   display: grid;
   place-items: center;
   width: 52px;
   height: 52px;
-  border-radius: 50%;
-  background: var(--accent-soft);
+  background: linear-gradient(174deg, #4f88ff 0%, var(--accent) 52%, #0a45c8 100%);
+  /* A voxel, read straight off the artwork: lit top face, shadowed bottom,
+     and a hard block of its own colour underneath so it stands off the card
+     rather than lying on it. */
+  box-shadow: inset 0 2px 0 rgba(255, 255, 255, .5),
+              inset 0 -2px 0 rgba(6, 34, 96, .38),
+              3px 3px 0 #dbe6fb;
 }
 
 .stat__icon svg,
@@ -402,11 +473,19 @@ a { color: inherit; text-decoration: none; }
   width: 26px;
   height: 26px;
   fill: none;
-  stroke: var(--accent-deep);
-  stroke-width: 1.6;
+  stroke: #fff;
+  stroke-width: 1.7;
   stroke-linecap: round;
   stroke-linejoin: round;
 }
+
+/* Base keeps its own blue, being a network mark rather than one of the set —
+   so its block stays pale and its stroke stays blue. */
+.fact__icon--base {
+  background: linear-gradient(174deg, #ffffff 0%, var(--accent-soft) 100%);
+  box-shadow: inset 0 0 0 2px #cfe0ff;
+}
+.fact__icon--base svg { stroke: var(--base-blue); }
 
 /* Blinking "…" placeholder, shown until the first data load resolves */
 .dots {
@@ -487,12 +566,11 @@ a { color: inherit; text-decoration: none; }
   width: 100%;
   height: auto;
   aspect-ratio: 16 / 9;
-  border-radius: var(--r-card);
-  border: 1px solid var(--line);
+  border: 2px solid var(--face-edge);
+  box-shadow: var(--stack);
   /* The clip fades through black, so the box it sits in is black too — a
      white letterbox would flash at the edges on every fade. */
   background: #000;
-  box-shadow: var(--shadow-card);
 }
 
 @media (max-width: 620px) {
@@ -504,15 +582,23 @@ a { color: inherit; text-decoration: none; }
    ========================================================================== */
 
 .facts {
+  position: relative;
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 28px;
   margin-top: 26px;
   padding: 22px 26px;
-  border: 1px solid var(--line);
-  border-radius: var(--r-card);
-  background: var(--surface);
-  box-shadow: var(--shadow-card);
+  border: 2px solid var(--face-edge);
+  background: var(--face);
+  box-shadow: var(--stack);
+}
+
+.facts::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto;
+  height: 2px;
+  background: #fff;
 }
 
 .fact {
@@ -561,6 +647,7 @@ a { color: inherit; text-decoration: none; }
    ========================================================================== */
 
 .eco {
+  position: relative;
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   align-items: start;
@@ -568,9 +655,9 @@ a { color: inherit; text-decoration: none; }
   margin: 44px auto 0;
   max-width: 660px;
   padding: 22px 24px 26px;
-  border: 1px solid var(--line);
-  border-radius: var(--r-card);
-  background: var(--surface);
+  border: 2px solid var(--face-edge);
+  background: var(--face);
+  box-shadow: var(--stack);
 }
 
 .eco__half {
@@ -579,7 +666,6 @@ a { color: inherit; text-decoration: none; }
   align-items: center;
   gap: 14px;
   padding: 4px 8px;
-  border-radius: 12px;
   text-align: center;
   transition: transform .18s ease;
 }
