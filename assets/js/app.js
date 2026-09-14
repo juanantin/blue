@@ -1231,6 +1231,29 @@
      at least as authoritative as the one already holding it. */
   var RANK = { remembered: -1, dexscreener: 0, rewards: 1, rewardPrice: 2, chain: 3 };
 
+  /* Rank is per SOURCE and per METRIC, because one source is not uniformly
+     better than another — it depends on what is being asked.
+
+     data/rewards.json outranks DexScreener on the reward figures: they are
+     the same arithmetic, computed once by the indexer instead of by every
+     visitor's browser. But it also carries market cap, liquidity and volume,
+     and there it is strictly worse: a committed snapshot is as old as the
+     last run that landed, while DexScreener is live on every load. Ranking
+     the whole source above DexScreener pinned the market cap tile to whatever
+     the file last said — reported as "stuck at 48k" while the pool had moved,
+     and it would have stayed stuck for as long as the indexer's schedule was
+     not running, which is exactly when a visitor most needs the live number.
+
+     So for the three market metrics the snapshot drops BELOW DexScreener —
+     still above `remembered`, so it fills the tiles instantly on a cold phone
+     and gets overwritten the moment the live answer lands. */
+  var MARKET_METRIC = { marketCap: 1, liquidity: 1, volume24h: 1 };
+
+  function rankFor(sourceRank, key) {
+    if (sourceRank === RANK.rewards && MARKET_METRIC[key]) return RANK.dexscreener - 0.5;
+    return sourceRank;
+  }
+
   function load() {
     sourceLog = [];
 
@@ -1297,9 +1320,10 @@
           Object.keys(part).forEach(function (k) {
             var v = part[k];
             if (typeof v !== 'number' || !isFinite(v)) return;
-            if (owner[k] !== undefined && owner[k] > rank) return;   // outranked
+            var r = rankFor(rank, k);
+            if (owner[k] !== undefined && owner[k] > r) return;   // outranked
             stats[k] = v;
-            owner[k] = rank;
+            owner[k] = r;
             got = true;
           });
           if (got) {

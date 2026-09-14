@@ -67,14 +67,13 @@ jobs:
       # The DEPLOYED site, which is the only one a visitor sees. Everything
       # above runs against this working tree and so proves the code is right,
       # never that it is live — the repo is not served from GitHub Pages; it
-      # deploys to Vercel. Set the SITE_URL repository variable (Settings ▸
-      # Secrets and variables ▸ Actions ▸ Variables) to the deployment's URL;
-      # until it is set this step is skipped rather than failing, because
-      # there is genuinely no live site to probe yet.
+      # deploys to Vercel, at the URL below — which is the repo's own homepage
+      # field, set by Vercel when it linked the project. The SITE_URL
+      # repository variable (Settings ▸ Secrets and variables ▸ Actions ▸
+      # Variables) overrides it, for a preview deployment or a custom domain.
       - name: Probe the live site
-        if: vars.SITE_URL != ''
         env:
-          SITE_URL: ${{ vars.SITE_URL }}
+          SITE_URL: ${{ vars.SITE_URL || 'https://blue-psi-five.vercel.app' }}
         run: node scripts/page-probe.mjs
 
       # Reading these logs through the API returns only the TAIL of the job,

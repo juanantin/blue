@@ -29,6 +29,16 @@ on:
   schedule:
     # Deliberately off the :00/:15/:30/:45 boundary — GitHub's scheduler is
     # heavily oversubscribed there and delays runs the longest.
+    #
+    # ⚠ Do not treat this as a guarantee. Measured on this repo: the cron was
+    # added at 15:43 and had produced ZERO runs three hours later, with the
+    # workflow active and on the default branch. GitHub delays and outright
+    # DROPS scheduled runs under load, and a newly added cron seems to be the
+    # worst case. The site is built so that this degrades rather than breaks —
+    # every visitor's browser scans the chain itself and outranks this file,
+    # and since the market metrics no longer defer to it, a stalled schedule
+    # costs freshness on a cold load and nothing else. Push to one of the
+    # paths below to force a refresh.
     - cron: '7,22,37,52 * * * *'
   # Also on push to its own inputs. GitHub's scheduler routinely delays a
   # newly added cron by half an hour or more, and dispatching by hand needs a

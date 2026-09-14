@@ -48,6 +48,9 @@ html { -webkit-text-size-adjust: 100%; }
 
 body {
   margin: 0;
+  /* The containing block for .cubes, which spans the document rather than
+     the viewport. */
+  position: relative;
   font-family: var(--font);
   color: var(--ink);
   background-color: var(--page);
@@ -96,27 +99,33 @@ a { color: inherit; text-decoration: none; }
    loose. Decorative in the strict sense: aria-hidden, pointer-events: none,
    and nothing on the page depends on them.
 
-   Fixed rather than scrolled, so they fall past every section instead of
-   sitting in one. z-index: -1 puts them above the body's own background and
-   behind all in-flow content — which means the cards, being opaque, hide
-   them, and they read in the gutters and between sections rather than under
-   the figures.
+   ABSOLUTE, not fixed. Fixed was the first version and it was wrong: the
+   cubes hung in the viewport like dust on the lens, going nowhere while the
+   page moved under them. Anchored to the document they belong to the page —
+   they scroll with it, and each one then lags by its own --depth, so the
+   field has some thickness instead of being one flat sheet.
 
-   Two properties animate, transform and nothing else, so the whole layer
-   composites on the GPU and never triggers layout. Each cube's size, lane,
-   speed, drift, spin and start offset come from inline custom properties in
-   the markup; the delays are NEGATIVE, so the page opens mid-fall rather than
-   with sixteen cubes queued at the ceiling.
+   z-index: -1 puts the layer above the body's own background and behind all
+   in-flow content, so the opaque cards hide the cubes and they read in the
+   gutters rather than under the figures.
+
+   Two transforms, composed by nesting rather than fighting over one property:
+   the <i> carries the scroll parallax, its ::before carries the drift. A
+   single element cannot do both, because an animation owns `transform`
+   outright for as long as it runs.
    ========================================================================== */
 
 :root {
   --cube-blue:  url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 28'><path d='M12 1 23 7.5 12 14 1 7.5Z' fill='%235b8ff5'/><path d='M1 7.5 12 14v13L1 20.5Z' fill='%230b53e8'/><path d='M23 7.5 12 14v13l11-6.5Z' fill='%230a3ca6'/></svg>");
   --cube-green: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 28'><path d='M12 1 23 7.5 12 14 1 7.5Z' fill='%236fdc9a'/><path d='M1 7.5 12 14v13L1 20.5Z' fill='%232fbf6a'/><path d='M23 7.5 12 14v13l11-6.5Z' fill='%231c8f4e'/></svg>");
+  /* Set by the scroll handler in index.html; 0 until then, and forever if
+     that script never runs, which just means no parallax. */
+  --scroll: 0px;
 }
 
 .cubes {
-  position: fixed;
-  inset: 0;
+  position: absolute;
+  inset: 0;              /* the body's full height, however tall the page is */
   z-index: -1;
   overflow: hidden;
   pointer-events: none;
@@ -124,21 +133,35 @@ a { color: inherit; text-decoration: none; }
 
 .cubes i {
   position: absolute;
-  top: 0;
   left: var(--x);
+  top: var(--y);
   display: block;
   width: var(--s);
   height: calc(var(--s) * 1.1667);   /* the cube SVG's own 24:28 */
-  background: center / contain no-repeat var(--cube-blue);
-  opacity: var(--o);
-  animation: cube-fall var(--d) linear var(--delay) infinite;
+  /* The parallax. A cube shifted DOWN by a fraction of the scroll position
+     appears to scroll slower than the text beside it — near cubes keep pace,
+     far ones drag. */
+  transform: translate3d(0, calc(var(--scroll) * var(--depth)), 0);
 }
 
-.cubes i.is-green { background-image: var(--cube-green); }
+.cubes i::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: center / contain no-repeat var(--cube-blue);
+  animation: cube-drift var(--d) linear var(--delay) infinite;
+}
 
-@keyframes cube-fall {
-  from { transform: translate3d(0, -20vh, 0) rotate(0deg); }
-  to   { transform: translate3d(var(--drift), 120vh, 0) rotate(var(--spin)); }
+.cubes i.is-green::before { background-image: var(--cube-green); }
+
+/* Falls a short way and fades out at both ends, so the loop has no seam: a
+   cube that simply jumped back to its start would flicker once per cycle,
+   and at these durations that is the only thing the eye would catch. */
+@keyframes cube-drift {
+  0%   { transform: translate3d(0, -70px, 0) rotate(0deg); opacity: 0; }
+  14%  { opacity: var(--o); }
+  86%  { opacity: var(--o); }
+  100% { transform: translate3d(var(--drift), 210px, 0) rotate(var(--spin)); opacity: 0; }
 }
 
 /* Decoration is the first thing to go when someone asks for less motion. */
