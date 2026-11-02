@@ -19,13 +19,13 @@
   "totalFeesCollected": null,
   "totalFeesTokens": null,
   "holders": null,
-  "marketCap": 13669,
-  "liquidity": 4647.59,
-  "volume24h": 4353.32,
-  "updatedAt": "2026-11-01T23:03:04.714Z",
+  "marketCap": 13708,
+  "liquidity": 4666.25,
+  "volume24h": 4356.57,
+  "updatedAt": "2026-11-02T02:24:37.967Z",
   "meta": {
     "synced": false,
-    "blocksBehind": 1053458,
-    "kexPriceUsd": 0.00287
+    "blocksBehind": 1059504,
+    "kexPriceUsd": 0.002889
   }
 }
